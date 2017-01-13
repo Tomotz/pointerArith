@@ -1,0 +1,14 @@
+digraph cfg {
+    1 [label="1: set([])"]
+    2 [label="2: set([(Literal(lhs='b', rhs='c', rhsType='reference'),)])"]
+    3 [label="3: set([(Literal(lhs='b', rhs='c', rhsType='reference'),)])"]
+    4 [label="4: set([(Literal(lhs='c', rhs='a', rhsType='reference'),), (Literal(lhs='b', rhs='c', rhsType='reference'),)])"]
+    5 [label="5: set([(Literal(lhs='c', rhs='a', rhsType='reference'),), (Literal(lhs='b', rhs='c', rhsType='reference'),), (Literal(lhs='a', rhs='a', rhsType='reference'),)])"]
+    6 [label="6: set([(Literal(lhs='c', rhs='a', rhsType='reference'), Literal(lhs='b', rhs='c', rhsType='reference')), (Literal(lhs='a', rhs='a', rhsType='reference'), Literal(lhs='b', rhs='c', rhsType='reference')), (Literal(lhs='b', rhs='c', rhsType='reference'), Literal(lhs='b', rhs='c', rhsType='reference'))])"]
+	1->2 [label="b := &c"]
+	2->3 [label="assume x>0"]
+	2->6 [label="assume x<=0"]
+	3->4 [label="c := &a"]
+	4->5 [label="a := &a"]
+	5->6 [label="b := &c"]
+	}

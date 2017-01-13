@@ -1,0 +1,13 @@
+#a :=b
+b:=&c
+#a:=&c
+#c:=&c
+#b:=&a
+#b:=&c
+if (blablabla)
+{
+	c=&a
+	a :=&a
+}
+#c = *d
+#b:=&c
