@@ -7,7 +7,7 @@ b:=&c
 if (blablabla)
 {
 	c=&a
-	a :=&a
+#	a :=&a
 }
 #c = *d
 #b:=&c

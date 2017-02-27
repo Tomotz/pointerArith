@@ -7,19 +7,67 @@ bottom = set()
 top = 'top' # artifricial top value to avoid the need to know how many variables are used via FrontEnd
 iota=set()
 
+Pos = 0
+Neg = 1
+
+
+import collections
+
+# returs all nodes that are reachable from root
+def BFS(graph, root): 
+    visited, queue = set(), collections.deque([root])
+    while queue: 
+        vertex = queue.popleft()
+        for neighbour in graph[vertex]: 
+            if neighbour not in visited: 
+                visited.add(neighbour) 
+                queue.append(neighbour)
+    return visited
+
+# input: set of sets: < <,> , <,> , ...>
+# outer relation: conjunction, inner realtion: disjunction
+# output: a list of edges of reachable nodes
+def blow(s):
+    nodes = set()
+    # edges = set()
+    neighbours = {}
+    blown_edegs = set()
+    # create adjecent list
+    for disj_clause in s:
+        a = disj_clause[0]
+        b = (len(disj_clause) == 1 and a) or disj_clause[1]
+        nodes = nodes.union(set([(Neg, a), (Pos, a), (Neg, b), (Pos, b) ]))
+        if not (Neg, a) in neighbours:
+            neighbours[(Neg, a)] = set()       
+        neighbours[(Neg, a)].add((Pos, b))
+        if not (Neg, b) in neighbours:
+            neighbours[(Neg, b)] = set()       
+        neighbours[(Neg, b)].add((Pos, a))
+    
+    for node in nodes:
+        if node not in neighbours:
+            neighbours[node] = []
+
+    # run BFS from each node
+    for node in nodes:
+        reachble_list = BFS(neighbours, node)
+        for distant_neighbour in reachble_list:
+            blown_edegs.add((node, distant_neighbour))
+
+    return blown_edegs
+
+# output: a set of sets, with all the pairs (a,b) for which exist a path a->b in the 2SAT graph
 def join(a, b):
-    if a == top or b == top:
-        return top
-    elif a == bottom:
-        return b
-    elif b == bottom:
-        return a
-    else: 
-        out = set()
-        for aclause in a:
-            for bclause in b:
-                out.add(aclause+bclause)
-        return out
+    print(["*********", a,b])
+    blown_edges_a = blow(a)
+    blown_edges_b = blow(b)
+    intersection = blown_edges_a.intersection(blown_edges_b)
+    result = set()
+    for edge in intersection:
+        if edge[0][0] == Neg and edge[1][0] == Pos:
+            result.add(set([edge[0][1], edge[1][1]]))
+    return result
+
 
 # def meet(a, b):
 #     if a == top:
@@ -59,11 +107,8 @@ def replaceLhsInClause(clause, old, new):
 def copy_var(pt, lhs, rhs):
     # lhs = rhs
     # print "in copy_var", lhs, rhs
-    # print "pt: ", pt
     pt = removeLhs(lhs, pt)
-    # print "pt: ", pt
     pt |= set(replaceLhsInClause(clause, rhs, lhs) for clause in pt if isLhsInClause(rhs, clause))
-    # print "pt: ", pt
     return pt
 
 def getAllVars(pt):

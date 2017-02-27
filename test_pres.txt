@@ -1,0 +1,11 @@
+t = &a
+y = &b
+z = &c
+if (cond)
+{
+	p=&y
+} else
+{
+	p=&z
+}
+*p=t

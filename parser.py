@@ -30,6 +30,24 @@ refernceRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespac
 assignRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+varGroupRegex # x := y
 derefRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+re.escape("*")+varGroupRegex # x := *y
 
+def addOp(succ, tr, tr_txt, line, lineNum, nextLineNum):
+  #if not "else" in next_line:
+  succ[lineNum]={nextLineNum}
+  refReg = re.search(refernceRegex, line)
+  assReg = re.search(assignRegex, line)
+  derefReg = re.search(derefRegex, line)
+  if None != refReg:
+    tr[(lineNum, nextLineNum)] = lambda pt,a=refReg.group(1),b=refReg.group(2) : set_addr(pt,a,b)
+    tr_txt[(lineNum, nextLineNum)] = refReg.group(1) + " := &" + refReg.group(2)
+  elif None != assReg:
+    tr[(lineNum, nextLineNum)] = lambda pt,a=assReg.group(1),b=assReg.group(2) : copy_var(pt,a,b)
+    tr_txt[(lineNum, nextLineNum)] = assReg.group(1) + " := " + assReg.group(2)
+  elif None != derefReg:
+    tr[(lineNum, nextLineNum)] = lambda pt,a=derefReg.group(1),b=derefReg.group(2) : load(pt,a,b)
+    tr_txt[(lineNum, nextLineNum)] = derefReg.group(1) + " := *" + derefReg.group(2)
+  else:
+    raise Exception("unimplemented line type: " + str(line))
+
 def main(fileName):
   succ = dict()
   tr = dict()
@@ -37,7 +55,14 @@ def main(fileName):
   if_stack = []
   with open(fileName, "r") as codeFile:
     lineNum = 1
-    for line in codeFile.read().split("\n"):
+    lines = codeFile.read().split("\n")
+    for input_line_num in range(len(lines)):
+      line = lines[input_line_num]
+      try:
+        next_line = lines[input_line_num+1]
+      except:
+          next_line = ""
+
       stripped = line.strip()
       if stripped == "" or stripped.startswith("{") or stripped.startswith("#"):
         continue
@@ -45,36 +70,29 @@ def main(fileName):
         succ[lineNum]={lineNum + 1}
         tr[(lineNum, lineNum+1)] = lambda pt: pt
         tr_txt[(lineNum, lineNum+1)] = "assume x>0"
-        if_stack.append(lineNum)
+        if_stack.append(("if", lineNum, line))
         lineNum += 1
 
       elif stripped.startswith("}"):
         if (if_stack == []):
           raise Exception("unbalanced brackets")
+        cond, prev, prev_line_text = if_stack[-1]
+        if_stack = if_stack[:-1]
+        if cond == "if":
+          succ[prev].add(lineNum)
+          tr[(prev, lineNum)] = lambda pt: pt
+          tr_txt[(prev, lineNum)] = "assume x<=0"
         else:
-          prev = if_stack[-1]
-          if_stack = if_stack[:-1]
-          succ[prev].add(lineNum+1)
-          tr[(prev, lineNum+1)] = lambda pt: pt
-          tr_txt[(prev, lineNum+1)] = "assume x<=0"
-
+          print 
+          addOp(succ, tr, tr_txt, prev_line_text, prev, lineNum)
+        if "else" in stripped:
+          if_stack.append(last_state)
 
       else:
-        succ[lineNum]={lineNum + 1}
-        refReg = re.search(refernceRegex, line)
-        assReg = re.search(assignRegex, line)
-        derefReg = re.search(derefRegex, line)
-        if None != refReg:
-          tr[(lineNum, lineNum+1)] = lambda pt,a=refReg.group(1),b=refReg.group(2) : set_addr(pt,a,b)
-          tr_txt[(lineNum, lineNum+1)] = refReg.group(1) + " := &" + refReg.group(2)
-        elif None != assReg:
-          tr[(lineNum, lineNum+1)] = lambda pt,a=assReg.group(1),b=assReg.group(2) : copy_var(pt,a,b)
-          tr_txt[(lineNum, lineNum+1)] = assReg.group(1) + " := " + assReg.group(2)
-        elif None != derefReg:
-          tr[(lineNum, lineNum+1)] = lambda pt,a=derefReg.group(1),b=derefReg.group(2) : load(pt,a,b)
-          tr_txt[(lineNum, lineNum+1)] = derefReg.group(1) + " := *" + derefReg.group(2)
+        if "else" in next_line:
+          last_state = "else", lineNum, line
         else:
-          raise Exception("unimplemented line type: " + str(line))
+          addOp(succ, tr, tr_txt, line, lineNum, lineNum+1)
         lineNum += 1
     succ[lineNum] = {}
   print "succ: ", succ
