@@ -1,29 +1,38 @@
 
+FILTER_NEGATIVES = True
 
-def chaotic(succ, s, i, join, bottom, tr, tr_txt):
+def has_negation(tup):
+    for t in tup:
+        if not t.is_pos: return False
+    return True
+
+def remove_unwanted_literals_for_print(statments):
+    return set(filter(lambda s : (not FILTER_NEGATIVES) or has_negation(s), statments))
+
+def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, transition_functions, tr_txt):
     """
     succ is the successor nodes in the CFG
-    s in nodes is the start vertex
-    i is the initial value at the start
-    bottom is the minimum value
-    tr is the transfer function
+    first_line_number in nodes is the start vertex
+    statement_set is the initial value at the start
+    uninitialized_set is the minimum value
+    transition_functions is the transfer function
     tr_txt is the edge annotations
     """
-    wl = [s]
-    df = dict([(x, bottom) for x in succ])
-    df[s] = i
-    while wl != []:
-        print "worklist is {}\n".format(wl)
-        u = wl.pop()
+    lines_to_handle = [first_line_number]
+    all_statement_sets = dict([(x, uninitialized_set) for x in succ])
+    all_statement_sets[first_line_number] = statement_set
+    while lines_to_handle != []:
+        print "worklist is {}\n".format(lines_to_handle)
+        u = lines_to_handle.pop()
         print "Handling:", u
         for v in succ[u]:
-            new = join(tr[(u,v)](df[u]), df[v])
-            if (new != df[v]):
-                print "    Changing the dataflow value at {} from {} to {}".format(v, df[v], new)
-                df[v] = new
-                wl.append(v)
+            new = join(transition_functions[(u,v)](all_statement_sets[u]), all_statement_sets[v])
+            if (new != all_statement_sets[v]):
+                print "    Changing the dataflow value at {} from {} to {}".format(v, all_statement_sets[v], new)
+                all_statement_sets[v] = new
+                lines_to_handle.append(v)
                 print "    Adding {} to the worklist".format(v)
-                wl.sort(key=lambda x:-x) # sort in backward key order
+                lines_to_handle.sort(key=lambda x:-x) # sort in backward key order
             else:
                 print "    New dataflow value at {} equal to the old value".format(v)
             print
@@ -33,15 +42,15 @@ def chaotic(succ, s, i, join, bottom, tr, tr_txt):
 
     print "Dataflow results"
     for node in succ:
-        print "    {}: {}".format(node, df[node])
+        print "    {}: {}".format(node, all_statement_sets[node])
 
     import os
     f = open("temp_chaotic.dt", "w")
     f.write("digraph cfg {\n")
-    # write nodes and df values
+    # write nodes and all_statement_sets values
     for node in succ:
         f.write("    {} [label=\"{}: {}\"]\n".format(
-            node, node, df[node]))
+            node, node, remove_unwanted_literals_for_print(all_statement_sets[node])))
 
     for u in succ:
         for v in succ[u]:

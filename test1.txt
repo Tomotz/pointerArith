@@ -6,8 +6,9 @@ b:=&c
 #b:=&c
 if (blablabla)
 {
-	c=&a
-#	a :=&a
+	b:=&a
+	a :=&a
+    a := &d
 }
-#c = *d
+#c := *d
 #b:=&c

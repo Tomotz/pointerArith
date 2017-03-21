@@ -1,6 +1,6 @@
 from sys import argv
 from chaotic import chaotic
-from pointstoSAT import join, bottom, top, set_addr, copy_var, load, store, iota
+from pointstoSAT import join, uninitialized_set, top, set_addr, copy_var, load, store, iota
 import re
 
 # succ = {1:{2}, 2:{3}, 3:{4}, 4:{5, 6}, 5: {7}, 6:{7}, 7: {8}, 8: {}} # CFG edges
@@ -22,7 +22,7 @@ import re
 #            (7, 8): "*p := t"}  # for debugging
 
 
-# chaotic(succ, 1, iota, join, bottom, tr, tr_txt)
+# chaotic(succ, 1, iota, join, uninitialized_set, tr, tr_txt)
 varGroupRegex = "([a-zA-Z]+)"
 possibleWhitespacesRegex = " *"
 eqRegex = "(?:=|:=)"
@@ -98,10 +98,12 @@ def main(fileName):
   print "succ: ", succ
   print "tr: ", tr
   print "tr_txt: ", tr_txt
-  chaotic(succ, 1, iota, join, bottom, tr, tr_txt)
+  chaotic(succ, 1, iota, join, uninitialized_set, tr, tr_txt)
 
 
 if __name__ == "__main__":
+  # main("test1.txt")
+  print argv
   if len(argv) != 2:
     print "usage: ", argv[0], " file_to_parse"
   else:
