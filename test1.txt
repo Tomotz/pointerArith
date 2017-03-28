@@ -1,14 +1,14 @@
-#a :=b
+a :=&a
+p:=&a
 b:=&c
-#a:=&c
 #c:=&c
 #b:=&a
 #b:=&c
 if (blablabla)
 {
 	#b:=&a
-	a :=&a
-    a := &d
+	p :=&b
+    b := &d
 }
 #c := *d
 #b:=&c

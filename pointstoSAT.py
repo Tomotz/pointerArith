@@ -17,13 +17,11 @@ class Disj_Clause(tuple):
             sorted1 = b==None and [a] or [a,b]
             sorted1.sort()
             s = super(Disj_Clause, cls).__new__(cls, sorted1)
-            print "length is: ", len(s)
             return s
         def __repr__(self):
             if len(self) == 1:
                 return "(%s)" % (self[0],)
             else:
-                print len(self)
                 return "(%s v %s)" % (self[0], self[1])
 
 
@@ -32,29 +30,27 @@ uninitialized_set = 'uninit'
 top = 'top' # artifricial top value to avoid the need to know how many variables are used via FrontEnd
 iota=set() #initialization on the clauses set
 
-axioms = set()
-
-allLiterals = set()
-
-# TODO: generate from code
-INTIALIZED_VARS = ["a", "b", "c", "d"]
-
-for var1 in INTIALIZED_VARS:
-    for var2 in INTIALIZED_VARS:
-        # create all possible literals - all references and negation fo references
-        allLiterals.add(Literal(var1, var2, True))
-        allLiterals.add(Literal(var1, var2, False))
-
-        # create conjunctions axioms
-        # literlas of the form: (var1=var2) -> ~(var1=var3)
-        for var3 in INTIALIZED_VARS:
-            if var2 == var3:
-                continue
-
-            new_clause = (Literal(var1, var2, False), Literal(var1, var3, False))
-            axioms.add(new_clause)
 
 
+def create_axioms_and_literals(cur_vars):
+    axioms = set()
+    allLiterals = set()
+    for var1 in cur_vars:
+        for var2 in cur_vars:
+            # create all possible literals - all references and negation fo references
+            allLiterals.add(Literal(var1, var2, True))
+            allLiterals.add(Literal(var1, var2, False))
+
+            # create conjunctions axioms
+            # literlas of the form: (var1=var2) -> ~(var1=var3)
+            for var3 in cur_vars:
+                if var2 == var3:
+                    continue
+
+                new_clause = (Literal(var1, var2, False), Literal(var1, var3, False))
+                axioms.add(new_clause)
+
+    return axioms, allLiterals
 
 
 # returs all nodes that are reachable from root
@@ -72,18 +68,20 @@ def flip(literal):
     return Literal(literal.lhs, literal.rhs, not literal.is_pos)
 
 #removes axioms from an edge list
-def filter_trivial_edges(edges):
+def filter_trivial_edges(edges, axioms):
     return set(filter(lambda edge: not ((flip(edge[0]), edge[1]) in axioms), edges) )
 
 
 # input: set of sets: < <,> , <,> , ...>
 # outer relation: conjunction, inner realtion: disjunction
 # output: a list of edges of reachable nodes
-def blow(s):
+def blow(s, all_vars):
     nodes = set()
     # edges = set()
     neighbours = {}
     blown_edges = set()
+
+    axioms, allLiterals = create_axioms_and_literals(all_vars)
 
     new_s = set(axioms)
     #add edges from and to single literal clauses
@@ -116,15 +114,22 @@ def blow(s):
         for distant_neighbour in reachble_list:
             blown_edges.add((node, distant_neighbour))
 
-    return filter_trivial_edges(blown_edges)
+    return filter_trivial_edges(blown_edges, axioms)
 
 # output: a set of sets, with all the pairs (a,b) for which exist a path a->b in the 2SAT graph
 def join(a, b):
+
     print(["*********", a,b])
     if uninitialized_set in [a,b]: return a == uninitialized_set and b or a
-    blown_edges_a = blow(a)
+
+    # we want to get a list of all the varibles - and it's enough
+    # to list only the ones inside a / b that we got. No need
+    # to look at other vars that maybe used somewhere else.
+    all_vars = getAllVars(a) | getAllVars(b)
+
+    blown_edges_a = blow(a, all_vars)
     #print "hi", blown_edges_a, "\n\n"
-    blown_edges_b = blow(b)
+    blown_edges_b = blow(b, all_vars)
     #print "ji", blown_edges_b, "\n\n"
     intersection = blown_edges_a.intersection(blown_edges_b)
     result = set()
