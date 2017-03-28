@@ -116,7 +116,7 @@ def blow(s, all_vars):
 
     return filter_trivial_edges(blown_edges, axioms)
 
-# output: a set of sets, with all the pairs (a,b) for which exist a path a->b in the 2SAT graph
+# output: a set of sets, with all the pairs (x,y) for which exist a path x->y in the 2SAT graph
 def join(a, b):
 
     print(["*********", a,b])
@@ -195,12 +195,43 @@ def load(pt, lhs, rhs):
         toBeJoined.append(newPT | litTuple)
     return reduce(join, toBeJoined)
 
+def check_contradiction(pt):
+    all_vars = getAllVars(pt)
+    graph = blow(pt, all_vars)
+    for literal in create_axioms_and_literals(pt)[1]:
+        if literal.is_pos == True:
+            flip_lit = flip(literal)
+            is_pos_edge = False
+            is_neg_edge = False
+            for edge in graph:
+                if edge[0] == literal and edge[1] == flip_lit:
+                    is_pos_edge = True
+                if edge[0] == flip_lit and edge[1] == literal:
+                    is_neg_edge = True
+            if is_pos_edge and is_neg_edge:
+                print "found contradinction"
+                return True #found contradiction
+    print "no contradiction", is_pos_edge, is_neg_edge
+    return False
 
-#TODO:
+
+#TODO: need to check and remove pt's with contradictions - blow, then check if there is a path from literal
+#to contradiction and vice versa
 def store(pt, lhs, rhs):
-    # *lhs = rhs
+    # *lhs = &rhs
     print "in store", lhs, rhs
-    return pt | set((x, y) for (l, x) in pt for (r, y) in pt if (l, r)==(lhs, rhs))
+    out_pt = 'uninit'
+    for var in getAllVars(pt):
+        print 2222222222, lhs, var, rhs
+        temp_pt = set(pt | {Disj_Clause(Literal(lhs, var, True))})
+        if check_contradiction(temp_pt):
+            continue
+        print 3333333333, temp_pt
+        new_pt = set_addr(temp_pt, var, rhs)
+        print 9999999999999999,  out_pt, "\n", 8888888888888888, new_pt
+        out_pt = join(new_pt, out_pt)
+        print 11111111111,  out_pt
+    return out_pt
 
 
 

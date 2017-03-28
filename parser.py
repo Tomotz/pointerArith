@@ -29,22 +29,31 @@ eqRegex = "(?:=|:=)"
 refernceRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+re.escape("&")+varGroupRegex # x := &y
 assignRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+varGroupRegex # x := y
 derefRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+re.escape("*")+varGroupRegex # x := *y
+storeRegex = re.escape("*")+varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+re.escape("&")+varGroupRegex # *x := &y
 
 def addOp(succ, tr, tr_txt, line, lineNum, nextLineNum):
   #if not "else" in next_line:
   succ[lineNum]={nextLineNum}
-  refReg = re.search(refernceRegex, line)
-  assReg = re.search(assignRegex, line)
-  derefReg = re.search(derefRegex, line)
+  refReg = re.match(refernceRegex, line)
+  assReg = re.match(assignRegex, line)
+  derefReg = re.match(derefRegex, line)
+  storeReg = re.match(storeRegex, line)
   if None != refReg:
+    print 1
     tr[(lineNum, nextLineNum)] = lambda pt,a=refReg.group(1),b=refReg.group(2) : set_addr(pt,a,b)
     tr_txt[(lineNum, nextLineNum)] = refReg.group(1) + " := &" + refReg.group(2)
   elif None != assReg:
+    print 2
     tr[(lineNum, nextLineNum)] = lambda pt,a=assReg.group(1),b=assReg.group(2) : copy_var(pt,a,b)
     tr_txt[(lineNum, nextLineNum)] = assReg.group(1) + " := " + assReg.group(2)
   elif None != derefReg:
+    print 3
     tr[(lineNum, nextLineNum)] = lambda pt,a=derefReg.group(1),b=derefReg.group(2) : load(pt,a,b)
     tr_txt[(lineNum, nextLineNum)] = derefReg.group(1) + " := *" + derefReg.group(2)
+  elif None != storeRegex:
+    print "in store regex!!!!!!!!!!"
+    tr[(lineNum, nextLineNum)] = lambda pt,a=storeReg.group(1),b=storeReg.group(2) : store(pt,a,b)
+    tr_txt[(lineNum, nextLineNum)] = "*" + storeReg.group(1) + " := &" + storeReg.group(2)
   else:
     raise Exception("unimplemented line type: " + str(line))
 
