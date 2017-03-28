@@ -1,4 +1,6 @@
 from collections import namedtuple
+
+import collections
 # always reference: Literal of the form lhs = &rhs
 
 class Literal(namedtuple("Literal", "lhs rhs is_pos")):
@@ -8,6 +10,21 @@ class Literal(namedtuple("Literal", "lhs rhs is_pos")):
                 return "%s != &%s" % (self.lhs, self.rhs)
             else:
                 return "%s = &%s" % (self.lhs, self.rhs)
+
+#this is a disjunction clause. Makes all clauses comotetive indifferent.
+class Disj_Clause(tuple): 
+        def __new__(cls, a, b = None):
+            sorted1 = b==None and [a] or [a,b]
+            sorted1.sort()
+            s = super(Disj_Clause, cls).__new__(cls, sorted1)
+            print "length is: ", len(s)
+            return s
+        def __repr__(self):
+            if len(self) == 1:
+                return "(%s)" % (self[0],)
+            else:
+                print len(self)
+                return "(%s v %s)" % (self[0], self[1])
 
 
 
@@ -38,8 +55,6 @@ for var1 in INTIALIZED_VARS:
             axioms.add(new_clause)
 
 
-
-import collections
 
 
 # returs all nodes that are reachable from root
@@ -108,22 +123,16 @@ def join(a, b):
     print(["*********", a,b])
     if uninitialized_set in [a,b]: return a == uninitialized_set and b or a
     blown_edges_a = blow(a)
-    print "hi", blown_edges_a, "\n\n"
+    #print "hi", blown_edges_a, "\n\n"
     blown_edges_b = blow(b)
-    print "ji", blown_edges_b, "\n\n"
+    #print "ji", blown_edges_b, "\n\n"
     intersection = blown_edges_a.intersection(blown_edges_b)
     result = set()
     for edge in intersection:
-        result.add((flip(edge[0]), edge[1]))
+        result.add(Disj_Clause(flip(edge[0]), edge[1]))
     return result
 
 
-# def meet(a, b):
-#     if a == top:
-#         return b
-#     elif b == top:
-#         return a
-#     else: return a & b
 
 #checks if the variable appears as left hand size of one of the literals in the given clause
 def isLhsInClause(variable, clause):
@@ -143,22 +152,23 @@ def set_addr(pt, lhs, rhs):
     return pt | appended
 
 #replaces all the lhs recurences of the variable 'old' with the variable 'new' in the given clause
-def replaceLhsInClause(clause, old, new):
-    outClause = set()
-    for c in clause:
-        if c.lhs == old:
-            outClause.add(Literal(new, c.rhs, c.is_pos))
-        else:
-            outClause.add(c)
-    return tuple(outClause)
+# def replaceLhsInClause(clause, old, new):
+#     outClause = set()
+#     for c in clause:
+#         if c.lhs == old:
+#             outClause.add(Literal(new, c.rhs, c.is_pos))
+#         else:
+#             outClause.add(c)
+#     return tuple(outClause)
 
 
 def copy_var(pt, lhs, rhs):
-    # lhs = rhs
-    # print "in copy_var", lhs, rhs
-    pt = removeLhs(lhs, pt)
-    pt |= set(replaceLhsInClause(clause, rhs, lhs) for clause in pt if isLhsInClause(rhs, clause))
-    return pt
+    raise "copy_var is not implemented"
+#     # lhs = rhs
+#     # print "in copy_var", lhs, rhs
+#     pt = removeLhs(lhs, pt)
+#     pt |= set(replaceLhsInClause(clause, rhs, lhs) for clause in pt if isLhsInClause(rhs, clause))
+#     return pt
 
 def getAllVars(pt):
     outVars = set()
@@ -176,7 +186,7 @@ def load(pt, lhs, rhs):
     newPT = removeLhs(lhs, pt)
     toBeJoined = []
     for var in getAllVars(newPT):
-        litTuple = {(Literal(lhs, var, True),)}
+        litTuple = {Disj_Clause(Literal(lhs, var, True))}
         toBeJoined.append(newPT | litTuple)
     return reduce(join, toBeJoined)
 

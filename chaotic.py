@@ -1,4 +1,5 @@
 
+
 FILTER_NEGATIVES = True
 
 def has_negation(tup):
@@ -6,8 +7,25 @@ def has_negation(tup):
         if not t.is_pos: return False
     return True
 
-def remove_unwanted_literals_for_print(statments):
-    return set(filter(lambda s : (not FILTER_NEGATIVES) or has_negation(s), statments))
+
+def remove_weak_clauses(statements):
+    trivials = []
+    res = []
+    for s in statements:
+        # if p is a sure thing
+        if len(s) == 1 or s[0] == s[1]:
+            trivials.append(s[0])
+    for s in statements:
+        if len(s) == 2 and s[0] != s[1]:
+            if s[0] in trivials or s[1] in trivials:
+                continue
+        res.append(s)
+
+    return res
+
+def remove_unwanted_literals_for_print(statements):
+    statements = remove_weak_clauses(statements)
+    return set(filter(lambda s : (not FILTER_NEGATIVES) or has_negation(s), statements))
 
 def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, transition_functions, tr_txt):
     """

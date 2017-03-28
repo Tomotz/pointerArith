@@ -6,7 +6,7 @@ b:=&c
 #b:=&c
 if (blablabla)
 {
-	b:=&a
+	#b:=&a
 	a :=&a
     a := &d
 }
