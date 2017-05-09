@@ -10,6 +10,11 @@ class Literal(namedtuple("Literal", "lhs rhs is_pos")):
                 return "%s != &%s" % (self.lhs, self.rhs)
             else:
                 return "%s = &%s" % (self.lhs, self.rhs)
+        def __eq__(self, other):
+            if type(other) != type(self):
+                return False
+            return self.lhs == other.lhs and self.rhs == other.rhs and self.is_pos == other.is_pos
+
 
 #this is a disjunction clause. Makes all clauses comotetive indifferent.
 class Disj_Clause(tuple): 
@@ -80,7 +85,6 @@ def blow(s, all_vars):
     # edges = set()
     neighbours = {}
     blown_edges = set()
-
     axioms, allLiterals = create_axioms_and_literals(all_vars)
 
     new_s = set(axioms)
@@ -119,7 +123,6 @@ def blow(s, all_vars):
 # output: a set of sets, with all the pairs (x,y) for which exist a path x->y in the 2SAT graph
 def join(a, b):
 
-    print(["*********", a,b])
     if uninitialized_set in [a,b]: return a == uninitialized_set and b or a
 
     # we want to get a list of all the varibles - and it's enough
@@ -198,7 +201,7 @@ def load(pt, lhs, rhs):
 def check_contradiction(pt):
     all_vars = getAllVars(pt)
     graph = blow(pt, all_vars)
-    for literal in create_axioms_and_literals(pt)[1]:
+    for literal in create_axioms_and_literals(all_vars)[1]:
         if literal.is_pos == True:
             flip_lit = flip(literal)
             is_pos_edge = False
@@ -209,28 +212,21 @@ def check_contradiction(pt):
                 if edge[0] == flip_lit and edge[1] == literal:
                     is_neg_edge = True
             if is_pos_edge and is_neg_edge:
-                print "found contradinction"
                 return True #found contradiction
-    print "no contradiction", is_pos_edge, is_neg_edge
     return False
 
 
-#TODO: need to check and remove pt's with contradictions - blow, then check if there is a path from literal
 #to contradiction and vice versa
 def store(pt, lhs, rhs):
     # *lhs = &rhs
     print "in store", lhs, rhs
     out_pt = 'uninit'
     for var in getAllVars(pt):
-        print 2222222222, lhs, var, rhs
         temp_pt = set(pt | {Disj_Clause(Literal(lhs, var, True))})
         if check_contradiction(temp_pt):
             continue
-        print 3333333333, temp_pt
         new_pt = set_addr(temp_pt, var, rhs)
-        print 9999999999999999,  out_pt, "\n", 8888888888888888, new_pt
         out_pt = join(new_pt, out_pt)
-        print 11111111111,  out_pt
     return out_pt
 
 
