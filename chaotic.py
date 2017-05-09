@@ -76,4 +76,4 @@ def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, tra
     f.write("\t}\n")
     f.close()
     os.system("dot temp_chaotic.dt -Tpng > chaotic.png")
-    os.system("chaotic.png") # to open the png file
+    os.system("start chaotic.png") # to open the png file

@@ -160,23 +160,24 @@ def set_addr(pt, lhs, rhs):
     return pt | appended
 
 #replaces all the lhs recurences of the variable 'old' with the variable 'new' in the given clause
-# def replaceLhsInClause(clause, old, new):
-#     outClause = set()
-#     for c in clause:
-#         if c.lhs == old:
-#             outClause.add(Literal(new, c.rhs, c.is_pos))
-#         else:
-#             outClause.add(c)
-#     return tuple(outClause)
+def replaceLhsInClause(clause, old, new):
+    lit1 = clause[0]
+    lit2 = None
+    if lit1.lhs == old:
+        lit1 = Literal(new, lit1.rhs, lit1.is_pos)
+    if len(clause) > 1:
+        lit2 = clause[1]
+        if lit2.lhs == old:
+            lit2 = Literal(new, lit2.rhs, lit2.is_pos)
+    return Disj_Clause(lit1, lit2)
 
 
 def copy_var(pt, lhs, rhs):
-    raise "copy_var is not implemented"
-#     # lhs = rhs
-#     # print "in copy_var", lhs, rhs
-#     pt = removeLhs(lhs, pt)
-#     pt |= set(replaceLhsInClause(clause, rhs, lhs) for clause in pt if isLhsInClause(rhs, clause))
-#     return pt
+     # lhs = rhs
+     # print "in copy_var", lhs, rhs
+     pt = removeLhs(lhs, pt)
+     pt |= set(replaceLhsInClause(clause, rhs, lhs) for clause in pt if isLhsInClause(rhs, clause))
+     return pt
 
 def getAllVars(pt):
     outVars = set()
@@ -185,18 +186,6 @@ def getAllVars(pt):
             outVars.add(c.lhs)
             outVars.add(c.rhs)
     return outVars
-
-
-
-def load(pt, lhs, rhs):
-    # lhs = *rhs
-    print "in load", lhs, rhs
-    newPT = removeLhs(lhs, pt)
-    toBeJoined = []
-    for var in getAllVars(newPT):
-        litTuple = {Disj_Clause(Literal(lhs, var, True))}
-        toBeJoined.append(newPT | litTuple)
-    return reduce(join, toBeJoined)
 
 def check_contradiction(pt):
     all_vars = getAllVars(pt)
@@ -229,8 +218,24 @@ def store(pt, lhs, rhs):
         out_pt = join(new_pt, out_pt)
     return out_pt
 
+def load(pt, lhs, rhs):
+        # lhs = *rhs
+        print "in load", lhs, rhs
+
+        out_pt = 'uninit'
+        # it's important that getAllVars is on pt and not newPt
+        # because we want
+        for var in getAllVars(pt):
+            temp_pt = set(pt | {Disj_Clause(Literal(rhs, var, True))})
+            if check_contradiction(temp_pt):
+                continue
+            new_pt = copy_var(temp_pt, lhs, var)
+            out_pt = join(new_pt, out_pt)
+        return out_pt
 
 
+
+# TODO: seems like this was a test case taht we wanted to try
 # temp = *p
 # *p = t
 # *p=temp

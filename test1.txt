@@ -1,15 +1,11 @@
-#a :=&a
-#p:=&a
-b:=&c
-*b:=&c
-#c:=&c
-#b:=&a
-#b:=&c
-#if (blablabla)
-#{
-	#b:=&a
-#	*p :=&b
- #   b := &d
-#}
-#c := *d
-#b:=&c
+a :=&a
+if (bka)
+{
+a := &b
+}
+if (ooo)
+{
+a := &c
+}
+d := &d
+b = *a

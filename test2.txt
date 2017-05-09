@@ -1,4 +1,7 @@
-#a=&A
-#temp = &a
-b = &b
-b = *b
+c=&c
+a=&a
+if (x)
+{
+a=&c
+}
+b=*a

@@ -3,9 +3,10 @@ y = &b
 z = &c
 if (cond)
 {
-	p=&y
-} else
+p=&y
+}
+else
 {
-	p=&z
+p=&z
 }
 *p=t
