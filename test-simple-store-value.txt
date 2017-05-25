@@ -1,0 +1,6 @@
+# Checks a simple case of *a = b
+# This is different from *a = &b
+
+b=&d
+a=&c
+*a=b

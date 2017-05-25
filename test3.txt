@@ -1,0 +1,11 @@
+#a=&A
+#temp = &a
+b = &b
+if dsf:
+ b = *b
+ if bla:
+  x = &y
+else:
+ c = &d
+a = &a
+

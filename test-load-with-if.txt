@@ -1,0 +1,9 @@
+#This example checks the load function
+
+c=&c
+a=&a
+if (x)
+{
+a=&c
+}
+b=*a

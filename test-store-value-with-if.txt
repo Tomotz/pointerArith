@@ -1,0 +1,14 @@
+# Checks a case two options for p
+# Then do *p = something
+
+t=&a
+y=&b
+z=&c
+if (cond)
+{
+p=&y
+} else
+{
+p=&z
+}
+*p=t
