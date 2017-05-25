@@ -1,6 +1,6 @@
 from sys import argv
 from chaotic import chaotic
-from pointstoSAT import join, uninitialized_set, top, set_addr, copy_var, load, store, iota
+from pointstoSAT import join, uninitialized_set, top, set_addr, copy_var, load, store, iota, store_value
 import re
 
 # succ = {1:{2}, 2:{3}, 3:{4}, 4:{5, 6}, 5: {7}, 6:{7}, 7: {8}, 8: {}} # CFG edges
@@ -30,6 +30,7 @@ refernceRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespac
 assignRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+varGroupRegex # x := y
 derefRegex = varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+re.escape("*")+varGroupRegex # x := *y
 storeRegex = re.escape("*")+varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+re.escape("&")+varGroupRegex # *x := &y
+storeValueRegex = re.escape("*")+varGroupRegex+possibleWhitespacesRegex+eqRegex+possibleWhitespacesRegex+varGroupRegex # *x := y
 
 def addOp(succ, tr, tr_txt, line, lineNum, nextLineNum):
   #if not "else" in next_line:
@@ -38,6 +39,7 @@ def addOp(succ, tr, tr_txt, line, lineNum, nextLineNum):
   assReg = re.match(assignRegex, line)
   derefReg = re.match(derefRegex, line)
   storeReg = re.match(storeRegex, line)
+  storeValueReg = re.match(storeValueRegex, line)
   if None != refReg:
     print 1
     tr[(lineNum, nextLineNum)] = lambda pt,a=refReg.group(1),b=refReg.group(2) : set_addr(pt,a,b)
@@ -50,10 +52,12 @@ def addOp(succ, tr, tr_txt, line, lineNum, nextLineNum):
     print 3
     tr[(lineNum, nextLineNum)] = lambda pt,a=derefReg.group(1),b=derefReg.group(2) : load(pt,a,b)
     tr_txt[(lineNum, nextLineNum)] = derefReg.group(1) + " := *" + derefReg.group(2)
-  elif None != storeRegex:
-    print "in store regex!!!!!!!!!!"
+  elif None != storeReg:
     tr[(lineNum, nextLineNum)] = lambda pt,a=storeReg.group(1),b=storeReg.group(2) : store(pt,a,b)
     tr_txt[(lineNum, nextLineNum)] = "*" + storeReg.group(1) + " := &" + storeReg.group(2)
+  elif None != storeValueReg:
+    tr[(lineNum, nextLineNum)] = lambda pt,a=storeValueReg.group(1),b=storeValueReg.group(2) : store_value(pt,a,b)
+    tr_txt[(lineNum, nextLineNum)] = "*" + storeValueReg.group(1) + " := " + storeValueReg.group(2)
   else:
     raise Exception("unimplemented line type: " + str(line))
 
@@ -78,7 +82,7 @@ def main(fileName):
       if stripped.startswith("if"):
         succ[lineNum]={lineNum + 1}
         tr[(lineNum, lineNum+1)] = lambda pt: pt
-        tr_txt[(lineNum, lineNum+1)] = "assume x>0"
+        tr_txt[(lineNum, lineNum+1)] = "cond True"
         if_stack.append(("if", lineNum, line))
         lineNum += 1
 
@@ -90,7 +94,7 @@ def main(fileName):
         if cond == "if":
           succ[prev].add(lineNum)
           tr[(prev, lineNum)] = lambda pt: pt
-          tr_txt[(prev, lineNum)] = "assume x<=0"
+          tr_txt[(prev, lineNum)] = "cond False"
         else:
           print 
           addOp(succ, tr, tr_txt, prev_line_text, prev, lineNum)

@@ -17,6 +17,8 @@ class Literal(namedtuple("Literal", "lhs rhs is_pos")):
 
 
 #this is a disjunction clause. Makes all clauses comotetive indifferent.
+# If we get a single literal, we double it to always have clauses of two
+# But when printing - we print it as a single
 class Disj_Clause(tuple): 
         def __new__(cls, a, b = None):
             sorted1 = b==None and [a] or [a,b]
@@ -24,7 +26,7 @@ class Disj_Clause(tuple):
             s = super(Disj_Clause, cls).__new__(cls, sorted1)
             return s
         def __repr__(self):
-            if len(self) == 1:
+            if len(self) ==1 or self[0] == self[1]:
                 return "(%s)" % (self[0],)
             else:
                 return "(%s v %s)" % (self[0], self[1])
@@ -205,7 +207,6 @@ def check_contradiction(pt):
     return False
 
 
-#to contradiction and vice versa
 def store(pt, lhs, rhs):
     # *lhs = &rhs
     print "in store", lhs, rhs
@@ -215,6 +216,19 @@ def store(pt, lhs, rhs):
         if check_contradiction(temp_pt):
             continue
         new_pt = set_addr(temp_pt, var, rhs)
+        out_pt = join(new_pt, out_pt)
+    return out_pt
+    
+def store_value(pt, lhs, rhs):
+    # *lhs = rhs
+    print "in store value", lhs, rhs
+    out_pt = 'uninit'
+    for var in getAllVars(pt):
+        temp_pt = set(pt | {Disj_Clause(Literal(lhs, var, True))})
+        if check_contradiction(temp_pt):
+            continue
+        #if Disj_Clause(Literal("y", "b", True)) in temp_pt
+        new_pt = copy_var(temp_pt, var, rhs)
         out_pt = join(new_pt, out_pt)
     return out_pt
 

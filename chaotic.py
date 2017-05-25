@@ -27,6 +27,10 @@ def remove_unwanted_literals_for_print(statements):
     statements = remove_weak_clauses(statements)
     return set(filter(lambda s : (not FILTER_NEGATIVES) or has_negation(s), statements))
 
+def divide_list(l, n):
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+    
 def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, transition_functions, tr_txt):
     """
     succ is the successor nodes in the CFG
@@ -46,7 +50,7 @@ def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, tra
         for v in succ[u]:
             new = join(transition_functions[(u,v)](all_statement_sets[u]), all_statement_sets[v])
             if (new != all_statement_sets[v]):
-                print "    Changing the dataflow value at {} from {} to {}".format(v, all_statement_sets[v], new)
+                #print "    Changing the dataflow value at {} from {} to {}".format(v, all_statement_sets[v], new)
                 all_statement_sets[v] = new
                 lines_to_handle.append(v)
                 print "    Adding {} to the worklist".format(v)
@@ -58,22 +62,30 @@ def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, tra
     print "Worklist empty"
     print
 
-    print "Dataflow results"
-    for node in succ:
-        print "    {}: {}".format(node, all_statement_sets[node])
+    #print "Dataflow results"
+    #for node in succ:
+    #    print "    {}: {}".format(node, all_statement_sets[node])
 
     import os
     f = open("temp_chaotic.dt", "w")
     f.write("digraph cfg {\n")
+    last_form = ""
     # write nodes and all_statement_sets values
     for node in succ:
+        filtered = remove_unwanted_literals_for_print(all_statement_sets[node])
+        last_form = filtered
         f.write("    {} [label=\"{}: {}\"]\n".format(
-            node, node, remove_unwanted_literals_for_print(all_statement_sets[node])))
+            node, node, "\n".join(
+                                    map(str, divide_list(list(filtered),5))
+                                 )
+                                                     )
+                )
 
     for u in succ:
         for v in succ[u]:
             f.write("\t" + str(u) + "->" + str(v) + " [label=\"" + tr_txt[(u,v)]+"\"]\n")
     f.write("\t}\n")
     f.close()
+    open("text_result.txt","w").write(str(last_form))
     os.system("dot temp_chaotic.dt -Tpng > chaotic.png")
     os.system("start chaotic.png") # to open the png file

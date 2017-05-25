@@ -1,9 +1,9 @@
 a :=&a
-if (bka)
+if (cond1)
 {
 a := &b
 }
-if (ooo)
+if (cond2)
 {
 a := &c
 }
