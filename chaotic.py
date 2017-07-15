@@ -50,7 +50,6 @@ def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, tra
         for v in succ[u]:
             new = join(transition_functions[(u,v)](all_statement_sets[u]), all_statement_sets[v])
             if (new != all_statement_sets[v]):
-                #print "    Changing the dataflow value at {} from {} to {}".format(v, all_statement_sets[v], new)
                 all_statement_sets[v] = new
                 lines_to_handle.append(v)
                 print "    Adding {} to the worklist".format(v)
@@ -61,10 +60,6 @@ def chaotic(succ, first_line_number, statement_set, join, uninitialized_set, tra
         print
     print "Worklist empty"
     print
-
-    #print "Dataflow results"
-    #for node in succ:
-    #    print "    {}: {}".format(node, all_statement_sets[node])
 
     import os
     f = open("temp_chaotic.dt", "w")
